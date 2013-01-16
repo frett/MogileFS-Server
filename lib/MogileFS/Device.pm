@@ -74,6 +74,18 @@ sub fields {
     return $ret;
 }
 
+# returns a calculated weight
+sub calculated_weight {
+    my $self = shift;
+
+    # percent_free weight ratio between completely empty and completely full devices
+    # TODO: make this a server configuration parameter
+    my $pfr = 4;
+    $pfr = 1 if($pfr <= 1);
+
+    return $self->weight * (1 + (($pfr - 1) * $self->percent_free)) / $pfr;
+}
+
 sub observed_fields {
     return $_[0]->fields(@observed_fields);
 }

@@ -252,7 +252,7 @@ sub cmd_create_open {
     my @devices;
 
     unless (MogileFS::run_global_hook('cmd_create_open_order_devices', [Mgd::device_factory()->get_all], \@devices)) {
-        @devices = sort_devs_by_freespace(Mgd::device_factory()->get_all);
+        @devices = sort_devs_by_weight(Mgd::device_factory()->get_all);
     }
 
     if ($size) {
@@ -336,6 +336,21 @@ sub sort_devs_by_freespace {
         [$_, 100 * $_->percent_free]
     } sort {
         $b->percent_free <=> $a->percent_free;
+    } grep {
+        $_->should_get_new_files;
+    } @_;
+
+    my @list =
+        MogileFS::Util::weighted_list(splice(@devices_with_weights, 0, 20));
+
+    return @list;
+}
+
+sub sort_devs_by_weight {
+    my @devices_with_weights = sort {
+        $b->[1] <=> $a->[1];
+    } map {
+        [$_, $_->calculated_weight]
     } grep {
         $_->should_get_new_files;
     } @_;
